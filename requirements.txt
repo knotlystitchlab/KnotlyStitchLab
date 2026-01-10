@@ -1,0 +1,4 @@
+streamlit
+drawsvg
+svglib
+reportlab
