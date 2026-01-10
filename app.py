@@ -26,38 +26,46 @@ class CrochetEngine:
             tokens.extend([t] * qtd)
         return tokens
 
-    def render_3d(self, padrao, modo_circular):
+def render_3d(self, padrao, modo_circular):
         x_c, y_c, z_c, cores, nomes = [], [], [], [], []
         
         for r_idx, linha in enumerate(padrao):
             tokens = self.parse_linha(linha)
             if not tokens: continue
             
+            # Valores ajustados para menor espaçamento
+            raio_base = 10 + (r_idx * 4) # Crescimento de raio mais suave
+            altura = r_idx * 2          # Subida de carreira mais curta
+            
+            num_pontos = len(tokens)
             for i, t in enumerate(tokens):
                 if modo_circular:
-                    raio = 20 + (r_idx * 10)
-                    ang = math.radians(i * (360 / len(tokens)))
-                    x_c.append(raio * math.cos(ang))
-                    y_c.append(raio * math.sin(ang))
-                    z_c.append(r_idx * 5)
+                    ang = math.radians(i * (360 / num_pontos))
+                    x_c.append(raio_base * math.cos(ang))
+                    y_c.append(raio_base * math.sin(ang))
+                    z_c.append(altura)
                 else:
-                    x_c.append(i * 10)
-                    y_c.append(r_idx * 10)
+                    x_c.append(i * 5)   # Pontos mais próximos horizontalmente
+                    y_c.append(r_idx * 5) # Carreiras mais próximas
                     z_c.append(0)
                 
                 nomes.append(f"Carreira {r_idx+1}: {t}")
                 cores.append('#6c5ce7' if t == 'sc' else '#2ecc71' if t == 'inc' else '#e74c3c')
 
-        # CRIAR O GRÁFICO (Parênteses corrigidos aqui)
         fig = go.Figure(data=[go.Scatter3d(
             x=x_c, y=y_c, z=z_c, 
-            mode='markers+lines' if not modo_circular else 'markers',
+            mode='markers+lines' if len(x_c) < 500 else 'markers',
             text=nomes,
-            marker=dict(size=5, color=cores, opacity=0.8)
+            marker=dict(size=6, color=cores, opacity=0.9, line=dict(width=0))
         )])
         
         fig.update_layout(
-            scene=dict(xaxis_visible=False, yaxis_visible=False, zaxis_visible=True),
+            scene=dict(
+                xaxis_visible=False, 
+                yaxis_visible=False, 
+                zaxis_visible=True,
+                aspectmode='data' # Isto obriga o 3D a respeitar as proporções reais
+            ),
             margin=dict(l=0, r=0, b=0, t=0)
         )
         return fig
@@ -87,3 +95,4 @@ if receita:
     
     fig_3d = engine.render_3d(linhas, is_circular)
     st.plotly_chart(fig_3d, use_container_width=True)
+
