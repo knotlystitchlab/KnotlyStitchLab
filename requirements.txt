@@ -1,4 +1,4 @@
 streamlit
-drawsvg
+drawsvg==2.3.0
 svglib
 reportlab
