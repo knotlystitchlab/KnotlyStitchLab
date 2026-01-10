@@ -1,2 +1,4 @@
 libcairo2
 pkg-config
+python3-dev
+libgles2-mesa-dev
