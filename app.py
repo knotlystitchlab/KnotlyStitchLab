@@ -5,7 +5,6 @@ import drawsvg as draw
 import io
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF
-
 # --- DICIONÁRIO MULTILINGUE ---
 LANGUAGES = {
     "Português (PT)": {
@@ -138,4 +137,5 @@ if receita:
     drawing_rl = svg2rlg(svg_io)
     pdf_io = io.BytesIO()
     renderPDF.drawToFile(drawing_rl, pdf_io)
+
     st.download_button(t["download"], pdf_io.getvalue(), "pattern_beta.pdf")
