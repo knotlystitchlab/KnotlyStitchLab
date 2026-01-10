@@ -28,13 +28,12 @@ class CrochetEngine:
         x_c, y_c, z_c, cores, nomes = [], [], [], [], []
         
         for r_idx, linha in enumerate(padrao):
-            # CORREÇÃO AQUI: Usamos self.parse_linha
             tokens = self.parse_linha(linha)
             if not tokens: continue
             
-            # Ajuste de espaçamento apertado
-            raio_base = 10 + (r_idx * 4) 
-            altura = r_idx * 2          
+            # VALORES MAIS APERTADOS: Raio 2 e Altura 1.5
+            raio_base = 5 + (r_idx * 2) 
+            altura = r_idx * 1.5          
             num_pontos = len(tokens)
 
             for i, t in enumerate(tokens):
@@ -44,8 +43,8 @@ class CrochetEngine:
                     y_c.append(raio_base * math.sin(ang))
                     z_c.append(altura)
                 else:
-                    x_c.append(i * 5)   
-                    y_c.append(r_idx * 5) 
+                    x_c.append(i * 2)   
+                    y_c.append(r_idx * 2) 
                     z_c.append(0)
                 
                 nomes.append(f"Carreira {r_idx+1}: {t}")
@@ -53,14 +52,21 @@ class CrochetEngine:
 
         fig = go.Figure(data=[go.Scatter3d(
             x=x_c, y=y_c, z=z_c, 
-            mode='markers+lines' if len(x_c) < 500 else 'markers',
+            mode='markers+lines', # Linhas ajudam a ver a continuidade do fio
             text=nomes,
-            marker=dict(size=6, color=cores, opacity=0.9)
+            line=dict(color='#d1d1d1', width=2),
+            marker=dict(size=5, color=cores, opacity=0.9)
         )])
         
         fig.update_layout(
-            scene=dict(xaxis_visible=False, yaxis_visible=False, zaxis_visible=True, aspectmode='data'),
-            margin=dict(l=0, r=0, b=0, t=0)
+            scene=dict(
+                xaxis_visible=False, 
+                yaxis_visible=False, 
+                zaxis_visible=True,
+                aspectmode='data' # Mantém a proporção real, sem esticar
+            ),
+            margin=dict(l=0, r=0, b=0, t=0),
+            height=600
         )
         return fig
 
@@ -68,18 +74,32 @@ class CrochetEngine:
 st.set_page_config(page_title="Amu Studio 3D", layout="wide")
 engine = CrochetEngine()
 
+# Lógica para limpar a receita
+if 'receita_input' not in st.session_state:
+    st.session_state.receita_input = "R1: 6 sc\nR2: 6 inc\nR3: [1 sc, 1 inc] x6"
+
+def limpar_texto():
+    st.session_state.receita_input = ""
+
 st.title("🧶 Amu Studio 3D")
 
 with st.sidebar:
     st.header("Configurações")
     modo = st.radio("Formato:", ["Circular (Amigurumi)", "Plano (Mantas)"])
+    st.divider()
+    # Botão de Limpar
+    st.button("Limpar Receita", on_click=limpar_texto)
+    st.info("Dica: Usa o rato para rodar e o scroll para fazer zoom no modelo.")
 
-receita = st.text_area("Insira a sua receita:", "R1: 6 sc\nR2: 6 inc\nR3: [1 sc, 1 inc] x6", height=150)
+# Input de texto vinculado ao session_state
+receita = st.text_area("Insira a sua receita:", value=st.session_state.receita_input, key="receita_field", height=150)
+# Atualiza o estado para manter sincronizado
+st.session_state.receita_input = receita
 
 if receita:
     linhas = receita.strip().split('\n')
     is_circular = "Circular" in modo
     
-    st.subheader("Visualização 3D Interativa")
+    st.subheader("Visualização 3D")
     fig_3d = engine.render_3d(linhas, is_circular)
     st.plotly_chart(fig_3d, use_container_width=True)
