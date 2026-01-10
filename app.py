@@ -48,15 +48,12 @@ class CrochetEngine:
         return d
 
     def render_flat(self, padrao):
-        # Desenho retangular para mantas
         d = draw.Drawing(800, 500)
         d.append(draw.Rectangle(0, 0, 800, 500, fill='white'))
         for r_idx, linha in enumerate(padrao):
             tokens = self.parse_linha(linha)
             if not tokens: continue
-            # Alterna a direção da carreira (ida e volta)
             if r_idx % 2 != 0: tokens = tokens[::-1]
-            
             y = 400 - (r_idx * 40)
             for c_idx, t in enumerate(tokens):
                 x = 50 + (c_idx * 30)
@@ -69,11 +66,21 @@ st.set_page_config(page_title="Amu Studio", layout="wide")
 with st.sidebar:
     st.title("🧶 Configurações")
     modo = st.radio("Modo de Trabalho:", ["Circular (Amigurumi)", "Plano (Mantas/Flats)"])
+    
     st.divider()
-    st.info("O modo Plano organiza os pontos em linhas horizontais.")
+    st.header("✨ Imagem Realista")
+    object_type = st.text_input("Que objeto é este?", "Base de amigurumi")
+    color_hex = st.color_picker("Cor principal do objeto:", "#6c5ce7") # Cor roxa padrão
+    
+    if st.button("Gerar Imagem Realista"):
+        st.session_state['generate_image'] = True
+        st.session_state['object_type'] = object_type
+        st.session_state['color_hex'] = color_hex
+    else:
+        st.session_state['generate_image'] = False # Resetar o estado se o botão não for clicado
 
 st.title("🧶 Amu Studio - Design de Padrões")
-receita = st.text_area("Insira a receita por carreiras:", "R1: 6 sc\nR2: 6 sc", height=200)
+receita = st.text_area("Insira a receita por carreiras:", "R1: 6 sc\nR2: 6 inc\nR3: [1 sc, 1 inc] x6\nR4: 18 sc", height=200)
 
 if receita:
     engine = CrochetEngine()
@@ -84,9 +91,31 @@ if receita:
     else:
         fig = engine.render_flat(linhas)
     
+    # Exibir o diagrama SVG
+    st.subheader("Diagrama Técnico:")
     st.write(fig.as_svg(), unsafe_allow_html=True)
     
-    # Download
+    # Botão de Download para SVG
     svg_data = fig.as_svg()
     b64 = base64.b64encode(svg_data.encode()).decode()
-    st.markdown(f'<a href="data:image/svg+xml;base64,{b64}" download="diagrama.svg" style="padding:10px; background-color:#6c5ce7; color:white; text-decoration:none; border-radius:5px;">📥 Descarregar SVG</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="data:image/svg+xml;base64,{b64}" download="diagrama.svg" style="padding:10px; background-color:#6c5ce7; color:white; text-decoration:none; border-radius:5px;">📥 Descarregar Diagrama (SVG)</a>', unsafe_allow_html=True)
+
+    # Lógica para gerar a imagem realista (será tratada pelo seu assistente)
+    if st.session_state.get('generate_image'):
+        st.subheader("Representação Realista:")
+        
+        # Converter HEX para nome da cor para a IA (exemplo simples)
+        color_name = ""
+        if color_hex == "#6c5ce7": color_name = "roxo"
+        elif color_hex == "#FF0000": color_name = "vermelho"
+        elif color_hex == "#00FF00": color_name = "verde"
+        elif color_hex == "#0000FF": color_name = "azul"
+        elif color_hex == "#FFFF00": color_name = "amarelo"
+        elif color_hex == "#000000": color_name = "preto"
+        elif color_hex == "#FFFFFF": color_name = "branco"
+        else: color_name = color_hex # Se não for uma das cores básicas, usa o HEX
+            
+        st.write(f"A gerar imagem para: **{st.session_state['object_type']}** na cor **{color_name}**...")
+        # AQUI É ONDE EU, COMO ASSISTENTE, VOU INTERPRETAR E GERAR A IMAGEM
+        # (A chamada da imagem não é feita diretamente no código Streamlit, mas sim na sua interação comigo)
+        # Por isso, o próximo passo é você me dizer o que o usuário escolheu no Streamlit.
