@@ -24,16 +24,16 @@ class CrochetEngine:
             tokens.extend([t] * qtd)
         return tokens
 
-def render_3d(self, padrao, modo_circular):
+    def render_3d(self, padrao, modo_circular):
         x_c, y_c, z_c, cores, nomes = [], [], [], [], []
         
         for r_idx, linha in enumerate(padrao):
             tokens = self.parse_linha(linha)
             if not tokens: continue
             
-            # Compactação máxima para parecer tecido
-            raio_base = 5 + (r_idx * 1.8) 
-            altura = r_idx * 1.2          
+            # Espaçamento muito apertado para simular tecido
+            raio_base = 5 + (r_idx * 1.5) 
+            altura = r_idx * 1.0          
             num_pontos = len(tokens)
 
             for i, t in enumerate(tokens):
@@ -43,28 +43,23 @@ def render_3d(self, padrao, modo_circular):
                     y_c.append(raio_base * math.sin(ang))
                     z_c.append(altura)
                 else:
-                    x_c.append(i * 1.5)   
-                    y_c.append(r_idx * 1.5) 
+                    x_c.append(i * 1.2)   
+                    y_c.append(r_idx * 1.2) 
                     z_c.append(0)
                 
                 nomes.append(f"Carreira {r_idx+1}: {t}")
-                # Cores com variação para simular textura (brilho/sombra)
-                base_color = '#6c5ce7' if t == 'sc' else '#2ecc71' if t == 'inc' else '#e74c3c'
-                cores.append(base_color)
+                cores.append('#6c5ce7' if t == 'sc' else '#2ecc71' if t == 'inc' else '#e74c3c')
 
-        # Usamos Scatter3d com definições de luz e sombra
+        # Criar a visualização com "textura" de pontos grandes
         fig = go.Figure(data=[go.Scatter3d(
             x=x_c, y=y_c, z=z_c, 
             mode='markers', 
             text=nomes,
             marker=dict(
-                size=8, # Pontos maiores para "fechar" os buracos
+                size=10, # Pontos grandes para fechar buracos
                 color=cores,
                 opacity=1,
-                # Adiciona uma linha de contorno suave para dar volume
-                line=dict(color='rgba(50, 50, 50, 0.2)', width=1),
-                # Simula brilho alterando o símbolo
-                symbol='circle' 
+                line=dict(color='rgba(0,0,0,0.1)', width=1) # Sombra suave
             )
         )])
         
@@ -72,25 +67,25 @@ def render_3d(self, padrao, modo_circular):
             scene=dict(
                 xaxis_visible=False, 
                 yaxis_visible=False, 
-                zaxis_visible=False, # Remove os eixos para focar na "peça"
+                zaxis_visible=False,
                 aspectmode='data',
-                # Fundo cinza muito claro para realçar a textura
                 bgcolor='white'
             ),
             margin=dict(l=0, r=0, b=0, t=0),
             height=700
         )
         return fig
-# --- INTERFACE ---
+
+# --- LÓGICA DA INTERFACE ---
 st.set_page_config(page_title="Amu Studio 3D", layout="wide")
 engine = CrochetEngine()
 
-# Lógica para limpar a receita
-if 'receita_input' not in st.session_state:
-    st.session_state.receita_input = "R1: 6 sc\nR2: 6 inc\nR3: [1 sc, 1 inc] x6"
+# Gerir o estado do texto para o botão limpar funcionar
+if 'receita_texto' not in st.session_state:
+    st.session_state.receita_texto = "R1: 6 sc\nR2: 6 inc\nR3: [1 sc, 1 inc] x6"
 
-def limpar_texto():
-    st.session_state.receita_input = ""
+def reset_receita():
+    st.session_state.receita_texto = ""
 
 st.title("🧶 Amu Studio 3D")
 
@@ -98,20 +93,18 @@ with st.sidebar:
     st.header("Configurações")
     modo = st.radio("Formato:", ["Circular (Amigurumi)", "Plano (Mantas)"])
     st.divider()
-    # Botão de Limpar
-    st.button("Limpar Receita", on_click=limpar_texto)
-    st.info("Dica: Usa o rato para rodar e o scroll para fazer zoom no modelo.")
+    if st.button("Limpar Receita"):
+        reset_receita()
+        st.rerun() # Força a atualização da página
 
-# Input de texto vinculado ao session_state
-receita = st.text_area("Insira a sua receita:", value=st.session_state.receita_input, key="receita_field", height=150)
-# Atualiza o estado para manter sincronizado
-st.session_state.receita_input = receita
+# Área de texto
+receita_input = st.text_area("Insira a sua receita:", value=st.session_state.receita_texto, height=150)
+st.session_state.receita_texto = receita_input
 
-if receita:
-    linhas = receita.strip().split('\n')
+if st.session_state.receita_texto:
+    linhas = st.session_state.receita_texto.strip().split('\n')
     is_circular = "Circular" in modo
     
-    st.subheader("Visualização 3D")
+    st.subheader("Visualização com Textura 3D")
     fig_3d = engine.render_3d(linhas, is_circular)
     st.plotly_chart(fig_3d, use_container_width=True)
-
