@@ -24,16 +24,16 @@ class CrochetEngine:
             tokens.extend([t] * qtd)
         return tokens
 
-    def render_3d(self, padrao, modo_circular):
+def render_3d(self, padrao, modo_circular):
         x_c, y_c, z_c, cores, nomes = [], [], [], [], []
         
         for r_idx, linha in enumerate(padrao):
             tokens = self.parse_linha(linha)
             if not tokens: continue
             
-            # VALORES MAIS APERTADOS: Raio 2 e Altura 1.5
-            raio_base = 5 + (r_idx * 2) 
-            altura = r_idx * 1.5          
+            # Compactação máxima para parecer tecido
+            raio_base = 5 + (r_idx * 1.8) 
+            altura = r_idx * 1.2          
             num_pontos = len(tokens)
 
             for i, t in enumerate(tokens):
@@ -43,33 +43,44 @@ class CrochetEngine:
                     y_c.append(raio_base * math.sin(ang))
                     z_c.append(altura)
                 else:
-                    x_c.append(i * 2)   
-                    y_c.append(r_idx * 2) 
+                    x_c.append(i * 1.5)   
+                    y_c.append(r_idx * 1.5) 
                     z_c.append(0)
                 
                 nomes.append(f"Carreira {r_idx+1}: {t}")
-                cores.append('#6c5ce7' if t == 'sc' else '#2ecc71' if t == 'inc' else '#e74c3c')
+                # Cores com variação para simular textura (brilho/sombra)
+                base_color = '#6c5ce7' if t == 'sc' else '#2ecc71' if t == 'inc' else '#e74c3c'
+                cores.append(base_color)
 
+        # Usamos Scatter3d com definições de luz e sombra
         fig = go.Figure(data=[go.Scatter3d(
             x=x_c, y=y_c, z=z_c, 
-            mode='markers+lines', # Linhas ajudam a ver a continuidade do fio
+            mode='markers', 
             text=nomes,
-            line=dict(color='#d1d1d1', width=2),
-            marker=dict(size=5, color=cores, opacity=0.9)
+            marker=dict(
+                size=8, # Pontos maiores para "fechar" os buracos
+                color=cores,
+                opacity=1,
+                # Adiciona uma linha de contorno suave para dar volume
+                line=dict(color='rgba(50, 50, 50, 0.2)', width=1),
+                # Simula brilho alterando o símbolo
+                symbol='circle' 
+            )
         )])
         
         fig.update_layout(
             scene=dict(
                 xaxis_visible=False, 
                 yaxis_visible=False, 
-                zaxis_visible=True,
-                aspectmode='data' # Mantém a proporção real, sem esticar
+                zaxis_visible=False, # Remove os eixos para focar na "peça"
+                aspectmode='data',
+                # Fundo cinza muito claro para realçar a textura
+                bgcolor='white'
             ),
             margin=dict(l=0, r=0, b=0, t=0),
-            height=600
+            height=700
         )
         return fig
-
 # --- INTERFACE ---
 st.set_page_config(page_title="Amu Studio 3D", layout="wide")
 engine = CrochetEngine()
@@ -103,3 +114,4 @@ if receita:
     st.subheader("Visualização 3D")
     fig_3d = engine.render_3d(linhas, is_circular)
     st.plotly_chart(fig_3d, use_container_width=True)
+
